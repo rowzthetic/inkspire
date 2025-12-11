@@ -3,7 +3,7 @@ import '../App.css';
 export default function Footer() {
   return (
     <footer>
-        <p>&copy; 2025 Ipire Tattoo Studio | Designed with passion</p>
+        <p>&copy; 2025 Inkspire Tattoo Studio | Designed with passion</p>
     </footer>
   );
 }
