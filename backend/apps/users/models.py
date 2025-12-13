@@ -1,8 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from core.models import BaseModel  # Adjust import if needed
-
+from core.models import BaseModel
 
 class User(AbstractUser, BaseModel):
     # --- BASIC LOGIN ---
