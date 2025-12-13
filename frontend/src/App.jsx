@@ -1,8 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import Explore from './pages/Explore';
 
-// Import Components
+// 1. Import Auth Context and Private Route
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './utils/PrivateRoute';
+
+import Explore from './pages/Explore';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -20,23 +23,29 @@ import Signup from './pages/Signup';
 function App() {
   return (
     <Router>
-      <Navbar />
-      
-      {/* This section switches the content based on the URL */}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/artists" element={<Artists />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/estimator" element={<PriceEstimator />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/explore" element={<Explore />} />
-      </Routes>
+      <AuthProvider>
+        <Navbar />
+        
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/artists" element={<Artists />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/explore" element={<Explore />} />
+          
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          
+          <Route element={<PrivateRoute />}>
+             <Route path="/estimator" element={<PriceEstimator />} />
+          </Route>
 
-      <Footer />
+        </Routes>
+
+        <Footer />
+      </AuthProvider>
     </Router>
   );
 }
