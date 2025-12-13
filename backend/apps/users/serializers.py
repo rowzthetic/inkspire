@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
 
@@ -85,3 +87,36 @@ class UserLoginSerializer(serializers.Serializer):
 
         data["user"] = user
         return data
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims to the token payload (optional, useful for decoding on client)
+        token["email"] = user.email
+        token["is_artist"] = user.is_artist
+        return token
+
+    def validate(self, attrs):
+        # This method controls the actual JSON response body
+        data = super().validate(attrs)
+
+        # Add extra response data
+        data["user_id"] = self.user.id
+        data["email"] = self.user.email
+        data["username"] = self.user.username
+        data["is_artist"] = self.user.is_artist
+
+        # Handle ImageField safely (return URL or null)
+        if self.user.profile_image:
+            data["profile_image"] = self.user.profile_image.url
+        else:
+            data["profile_image"] = None
+
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
