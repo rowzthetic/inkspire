@@ -9,6 +9,7 @@ dependencies = [
     "django-cors-headers>=4.9.0",
     "django-types>=0.22.0",
     "djangorestframework>=3.16.1",
+    "djangorestframework-simplejwt>=5.5.1",
     "openai>=2.9.0",
     "pillow>=12.0.0",
     "ruff>=0.14.8",
