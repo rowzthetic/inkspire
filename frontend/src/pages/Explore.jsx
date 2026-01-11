@@ -18,12 +18,13 @@ export default function Explore() {
               <Link to="#" className="btn">Explore</Link>
           </div>
 
-          {/* Feature 2 */}
+          {/* Feature 2 - UPDATED LINK HERE */}
           <div className="explore-card">
               <img src="images/lib2.jpg" alt="Tattoo Meaning Library" />
               <h3>Tattoo Meaning Library</h3>
               <p>Discover the stories and symbolism behind popular tattoo designs.</p>
-              <Link to="#" className="btn">Explore</Link>
+              {/* Changed from "#" to "/library" to connect your new page */}
+              <Link to="/library" className="btn">Explore</Link>
           </div>
 
           {/* Feature 3 */}
@@ -50,7 +51,7 @@ export default function Explore() {
               <Link to="#" className="btn">Create</Link>
           </div>
 
-          {/* Feature 6 - The Price Estimator is now here */}
+          {/* Feature 6 */}
           <div className="explore-card">
               <img src="images/calc.jpg" alt="Price Estimator" />
               <h3>Price Estimator</h3>

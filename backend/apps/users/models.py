@@ -1,67 +1,39 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from core.models import BaseModel
 
-class User(AbstractUser, BaseModel):
-    # --- BASIC LOGIN ---
-    email = models.EmailField(unique=True)
+class User(AbstractUser):
+    # Existing fields
     is_artist = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-
-    # --- ARTIST PROFILE DETAILS ---
-    # 1. Visuals
-    profile_image = models.ImageField(
-        upload_to="profiles/",
-        blank=True,
-        null=True,
-        help_text="Artist's avatar or logo",
+    profile_picture = models.ImageField(
+        upload_to="profile_pics/", blank=True, null=True
     )
 
-    # 2. Professional Info
-    bio = models.TextField(
-        blank=True, null=True, help_text="Short description about yourself"
-    )
-    years_of_experience = models.PositiveIntegerField(
-        null=True, blank=True, help_text="How long have you been tattooing?",
-    )
+    # Artist specific fields
+    bio = models.TextField(blank=True)
+    styles = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    shop_name = models.CharField(max_length=100, blank=True)
+    instagram_link = models.URLField(blank=True, null=True)
 
-    # 3. Work Details
-    shop_name = models.CharField(max_length=100, blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    instagram_link = models.URLField(
-        blank=True, null=True, help_text="Link to portfolio"
-    )
-
-    # 4. Money
-    hourly_rate = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Standard hourly charge",
-    )
-    minimum_charge = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Minimum price for a tattoo",
-    )
-
-    # 5. Styles (Simple text list for now)
-    styles = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text="Comma-separated styles (e.g. Realism, Traditional, Dotwork)",
-    )
-
-    # --- DJANGO CONFIG ---
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username"]
+    # ✅ OTP Fields (These are correct here)
+    otp = models.CharField(max_length=6, blank=True, null=True)
+    otp_expiry = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        if self.is_artist and self.shop_name:
-            return f"{self.username} ({self.shop_name})"
-        return self.email
+        return self.username
+
+
+class PortfolioImage(models.Model):
+    artist = models.ForeignKey(User, on_delete=models.CASCADE, related_name="portfolio")
+    image = models.ImageField(upload_to="portfolio/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class WorkSchedule(models.Model):
+    artist = models.ForeignKey(User, on_delete=models.CASCADE)
+    day_of_week = models.IntegerField()  # 0=Monday, 6=Sunday
+    is_active = models.BooleanField(default=True)
+    start_time = models.TimeField(default="09:00")
+    end_time = models.TimeField(default="17:00")

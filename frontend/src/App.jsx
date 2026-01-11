@@ -19,6 +19,8 @@ import Contact from './pages/Contact';
 import PriceEstimator from './pages/PriceEstimator';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyUserEmail';
+import TattooLibrary from './pages/TattooLibrary';
 
 function App() {
   return (
@@ -34,12 +36,14 @@ function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/explore" element={<Explore />} />
-          
+          <Route path="/activate/:uid/:token" element={<VerifyEmail />} />
+          <Route path="/activate/:token" element={<VerifyEmail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
+          <Route path="/estimator" element={<PriceEstimator />} />
           <Route element={<PrivateRoute />}>
-             <Route path="/estimator" element={<PriceEstimator />} />
+          <Route path="/library" element={<TattooLibrary />} />
+             {/* <Route path="/estimator" element={<PriceEstimator />} /> */}
           </Route>
 
         </Routes>
