@@ -39,6 +39,7 @@
 
 
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     # Dashboard Views
@@ -46,10 +47,13 @@ from .views import (
     ArtistDetailView,
     # Marketplace Views
     ArtistListView,
+    CustomTokenObtainPairView,
+    # ✅ IMPORT GOOGLE LOGIN VIEW
+    GoogleLoginView,
     LoginWithOTPView,
     LogoutView,
     ManagePortfolioView,
-    # Auth Views (New OTP System)
+    # Auth Views
     RegisterView,
     UpdateScheduleView,
     UserView,
@@ -57,16 +61,19 @@ from .views import (
 )
 
 urlpatterns = [
-    # --- Authentication (OTP System) ---
+    # --- Authentication ---
     path("register/", RegisterView.as_view(), name="register"),
-    path("auth/send-otp/", LoginWithOTPView.as_view(), name="send-otp"),  # For Login
-    path("auth/verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),  # For Verify
+    path("send-otp/", LoginWithOTPView.as_view(), name="send-otp"),
+    path("verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("user/", UserView.as_view(), name="current-user"),
+    # Standard Login (Email/Password)
+    path("login/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    # ✅ GOOGLE LOGIN ROUTE
+    path("google/", GoogleLoginView.as_view(), name="google-login"),
     # --- Marketplace (Public) ---
-    # Search artists: /api/auth/artists/?search=...
     path("artists/", ArtistListView.as_view(), name="artist-list"),
-    # Get specific artist profile: /api/auth/artists/{id}/
     path("artists/<int:pk>/", ArtistDetailView.as_view(), name="artist-detail"),
     # --- Artist Dashboard (Private) ---
     path("dashboard/", ArtistDashboardView.as_view(), name="artist-dashboard"),

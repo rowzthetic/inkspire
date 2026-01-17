@@ -153,7 +153,13 @@
 # DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv  # 1. Import dotenv
+
+# 2. Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -170,7 +176,7 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.price",
     "apps.shop",
-    "library",  # <--- ADDED THIS (Fixes your error)
+    "library",
     # django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -255,6 +261,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
 ]
 
 CORS_ALLOWED_CREDENTIALS = True
@@ -282,17 +289,19 @@ REST_FRAMEWORK = {
 APPEND_SLASH = False
 
 # ==========================================
-# EMAIL SETTINGS (REAL GMAIL)
+# 📧 EMAIL SETTINGS (Now loaded from .env)
 # ==========================================
-# If you want to switch back to Console (testing without internet),
-# comment out the lines below and uncomment the Console Backend line.
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # <--- Use this for dev/testing only
+# We load these safely from the .env file
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = f"Inkspire <{EMAIL_HOST_USER}>"
 
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = "smtp.gmail.com"
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "rojeshmaharjan2002@gmail.com"
-# EMAIL_HOST_PASSWORD = "eagu oqyo ixok qft"  # (I kept your app password here)
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# ==========================================
+# 🔑 GOOGLE AUTH SETTINGS
+# ==========================================
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
