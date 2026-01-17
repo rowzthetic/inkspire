@@ -241,7 +241,8 @@ export default function Signup() {
     is_artist: false,
     shop_name: '',
     city: '',
-    instagram_link: ''
+    instagram_link: '',
+    password: ''
   });
 
   const [otp, setOtp] = useState('');
@@ -267,6 +268,7 @@ export default function Signup() {
       const payload = {
         username: formData.username,
         email: formData.email,
+        password: formData.password, //  THIS WAS MISSING!
         phone_number: formData.phone_number,
         is_artist: formData.is_artist,
         shop_name: formData.is_artist ? formData.shop_name : "",
@@ -366,8 +368,20 @@ export default function Signup() {
             type="tel" name="phone_number" placeholder="Phone Number" required 
             value={formData.phone_number} onChange={handleChange}
           />
-          {/* Note: Password fields removed */}
+          
 
+{/* Password Field */}
+<div className="mb-4"> {/* Add spacing wrapper */}
+  <input
+    type="password"
+    name="password"       // ✅ Must match the state name
+    value={formData.password} // ✅ Binds to state
+    onChange={handleChange}   // ✅ Updates state on typing
+    placeholder="Password"
+    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-red-500" 
+    required
+  />
+</div>
           {/* Artist Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '15px 0', color: '#fff', width: '100%' }}>
             <input 
@@ -437,4 +451,5 @@ export default function Signup() {
       )}
     </div>
   );
+  
 }

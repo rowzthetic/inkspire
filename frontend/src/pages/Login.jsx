@@ -1,30 +1,29 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // 1. Import the Context Hook
+import { Link, useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
-  // We don't need useNavigate here anymore because AuthContext handles the redirect
   const { loginAction } = useAuth(); 
+  const navigate = useNavigate(); // 2. Initialize the hook
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // --- STANDARD LOGIN ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setIsLoading(true);
 
     try {
-      // 1. Perform the Fetch Request
-      const response = await fetch('http://localhost:8000/api/token/', {
+      const response = await fetch('http://localhost:8000/api/auth/login/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email,
+          username: email,
           password: password
         })
       });
@@ -35,15 +34,19 @@ export default function Login() {
         if (response.status === 401) {
             throw new Error('Invalid email or password');
         }
-        throw new Error(data.detail || 'Login failed');
+        // Handle custom artist pending message
+        if (data.detail) throw new Error(data.detail);
+        throw new Error('Login failed');
       }
 
-      // 2. SUCCESS: Pass the data to AuthContext
-      // The context will handle localStorage, state updates, and navigation
       await loginAction(data); 
 
-      // Optional: You can keep the alert here if you want
-      // alert("Logged in successfully!");
+      // ✅ 3. REDIRECT LOGIC (Standard)
+      if (data.is_artist) {
+        navigate('/artist-dashboard');
+      } else {
+        navigate('/'); // Regular users go to Home
+      }
 
     } catch (error) {
       console.error('Error:', error.message);
@@ -51,6 +54,38 @@ export default function Login() {
     } finally {
         setIsLoading(false);
     }
+  };
+
+  // --- GOOGLE LOGIN HANDLER ---
+  const handleGoogleSuccess = async (credentialResponse) => {
+      try {
+          const token = credentialResponse.credential;
+          
+          const res = await fetch('http://localhost:8000/api/auth/google/', { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: token })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+              throw new Error(data.error || "Google Login Failed");
+          }
+
+          await loginAction(data); 
+
+          // ✅ 4. REDIRECT LOGIC (Google)
+          if (data.is_artist) {
+              navigate('/artist-dashboard');
+          } else {
+              navigate('/');
+          }
+
+      } catch (error) {
+          console.error("Google Login Error:", error);
+          setErrorMessage(error.message || "Google Login Failed");
+      }
   };
 
   return (
@@ -91,6 +126,19 @@ export default function Login() {
             {isLoading ? 'Logging in...' : 'Login'}
         </button>
       </form>
+
+      {/* --- GOOGLE BUTTON UI --- */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0' }}>
+          <p style={{color: '#888', marginBottom: '15px'}}>— Or login with —</p>
+          
+          <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setErrorMessage("Google Login Failed")}
+              theme="filled_black"
+              shape="pill"
+              text="signin_with"
+          />
+      </div>
 
       <p style={{marginTop: '20px'}}>
         Don't have an account? <Link to="/signup" style={{color: '#e63946'}}>Sign up here</Link>

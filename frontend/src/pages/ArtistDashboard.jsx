@@ -1,105 +1,146 @@
-// src/pages/ArtistDashboard.jsx
-
 import React, { useState, useEffect } from 'react';
-import { Camera, DollarSign, Clock, Calendar, Save, Trash2 } from 'lucide-react';
+import { 
+    Clock, Camera, DollarSign, Save, LogOut, 
+    Settings, User 
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './ArtistDashboard.css'; // 👈 IMPORT THE CSS FILE HERE
+
+const API_BASE_URL = 'http://localhost:8000';
 
 const ArtistDashboard = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('schedule');
   const [artistData, setArtistData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { logOut } = useAuth();
 
-  // Fetch Data on Load
-  useEffect(() => {
-    const fetchDashboard = async () => {
-        // Replace with your actual token logic
-        const token = localStorage.getItem('token'); 
-        const res = await fetch('http://127.0.0.1:8000/api/auth/dashboard/', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setArtistData(data);
+  const fetchDashboard = async () => {
+    try {
+      const token = localStorage.getItem('access') || localStorage.getItem('token');
+      if (!token) { navigate('/login'); return; }
+
+      const res = await fetch(`${API_BASE_URL}/api/auth/dashboard/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.status === 401) { logOut(); return; }
+
+      const data = await res.json();
+      setArtistData(data);
+      setLoading(false);
+    } catch (error) {
+        console.error("Error fetching dashboard:", error);
         setLoading(false);
-    };
-    fetchDashboard();
-  }, []);
+    }
+  };
 
-  if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
+  useEffect(() => { fetchDashboard(); }, []);
+
+  if (loading) return <div className="loading-screen">LOADING STUDIO...</div>;
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white p-6">
-        <h2 className="text-2xl font-bold mb-8 text-purple-400">Inkspire Artist</h2>
-        <nav className="space-y-4">
-          <SidebarBtn icon={<Camera />} label="Profile & Portfolio" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-          <SidebarBtn icon={<Clock />} label="Schedule" active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} />
-          <SidebarBtn icon={<DollarSign />} label="Revenue" active={activeTab === 'revenue'} onClick={() => setActiveTab('revenue')} />
-        </nav>
-      </div>
+    <div className="dashboard-container">
+      
+      {/* SIDEBAR */}
+      <aside className="dashboard-sidebar">
+        <div>
+            {/* Logo */}
+            <div className="logo-section">
+                <div className="logo-icon"></div>
+                <h2 className="brand-name">INKSPIRE</h2>
+            </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto">
-        {activeTab === 'profile' && <ProfileSection artist={artistData} />}
-        {activeTab === 'schedule' && <ScheduleSection schedule={artistData.schedule} />}
-        {activeTab === 'revenue' && <RevenueSection revenue={artistData.revenue} />}
-      </div>
+            {/* Profile Snippet */}
+            <div className="artist-snippet">
+                <div className="snippet-avatar">
+                    {artistData?.profile_picture ? (
+                        <img src={`${API_BASE_URL}${artistData.profile_picture}`} alt="Profile" />
+                    ) : (
+                        <User color="#a1a1aa" size={20} />
+                    )}
+                </div>
+                <div className="snippet-info">
+                    <p className="role-label">Artist</p>
+                    <p className="artist-name">{artistData?.username}</p>
+                </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="nav-menu">
+                <NavButton icon={<Clock size={20}/>} label="Schedule" active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} />
+                <NavButton icon={<Camera size={20}/>} label="Portfolio" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+                <NavButton icon={<DollarSign size={20}/>} label="Revenue" active={activeTab === 'revenue'} onClick={() => setActiveTab('revenue')} />
+                <NavButton icon={<Settings size={20}/>} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+            </nav>
+        </div>
+        
+        {/* Logout */}
+        <button onClick={logOut} className="logout-btn">
+            <LogOut size={18} /> 
+            <span>Sign Out</span>
+        </button>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="dashboard-content">
+        <div className="content-wrapper">
+            {/* Header */}
+            <header className="header-section">
+                <div className="header-title">
+                    <h1>{getHeaderTitle(activeTab)}</h1>
+                    <p>Manage your studio presence and availability.</p>
+                </div>
+                <div className="date-display">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+            </header>
+
+            {/* Tab Content */}
+            <div className="tab-body">
+                {activeTab === 'schedule' && <ScheduleSection schedule={artistData.schedule} />}
+                {activeTab === 'profile' && <Placeholder title="Portfolio Gallery" icon={<Camera size={48}/>} />}
+                {activeTab === 'revenue' && <Placeholder title="Financial Overview" icon={<DollarSign size={48}/>} />}
+                {activeTab === 'settings' && <Placeholder title="Account Settings" icon={<Settings size={48}/>} />}
+            </div>
+        </div>
+      </main>
     </div>
   );
 };
 
-const SidebarBtn = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`flex items-center w-full p-3 rounded ${active ? 'bg-purple-600' : 'hover:bg-gray-800'}`}>
-    {icon} <span className="ml-3">{label}</span>
+/* --- SUB COMPONENTS --- */
+
+const NavButton = ({ icon, label, active, onClick }) => (
+  <button onClick={onClick} className={`nav-btn ${active ? 'active' : ''}`}>
+    {icon}
+    <span className="nav-label">{label}</span>
   </button>
 );
 
-// --- 1. PROFILE & PORTFOLIO COMPONENT ---
-const ProfileSection = ({ artist }) => {
-    const [bio, setBio] = useState(artist.bio);
-    
-    const handleSaveBio = async () => {
-        // Call your user update API here
-        alert(`Saving bio: ${bio}`);
-    };
+const Placeholder = ({ title, icon }) => (
+    <div style={{ padding: '60px', textAlign: 'center', border: '2px dashed #333', borderRadius: '16px', color: '#555' }}>
+        <div style={{ marginBottom: '20px' }}>{icon}</div>
+        <h2 style={{ fontSize: '24px', color: '#ddd' }}>{title}</h2>
+        <p>This feature is currently under development.</p>
+    </div>
+);
 
-    return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded shadow">
-                <h3 className="text-xl font-bold mb-4">Edit Profile</h3>
-                <textarea 
-                    className="w-full p-2 border rounded" 
-                    rows="4" 
-                    value={bio} 
-                    onChange={(e) => setBio(e.target.value)} 
-                />
-                <button onClick={handleSaveBio} className="mt-2 bg-purple-600 text-white px-4 py-2 rounded flex items-center">
-                    <Save size={16} className="mr-2" /> Save Bio
-                </button>
-            </div>
-
-            <div className="bg-white p-6 rounded shadow">
-                <h3 className="text-xl font-bold mb-4">Portfolio</h3>
-                <div className="grid grid-cols-4 gap-4">
-                    {artist.portfolio.map(img => (
-                        <div key={img.id} className="relative group">
-                            <img src={`http://127.0.0.1:8000${img.image}`} alt="portfolio" className="h-32 w-full object-cover rounded" />
-                            <button className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded opacity-0 group-hover:opacity-100">
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                    ))}
-                    <div className="h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded cursor-pointer hover:bg-gray-50">
-                        <span className="text-gray-400">+ Upload</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+const getHeaderTitle = (tab) => {
+    switch(tab) {
+        case 'schedule': return 'Weekly Schedule';
+        case 'profile': return 'Portfolio Gallery';
+        case 'revenue': return 'Financial Overview';
+        case 'settings': return 'Studio Settings';
+        default: return 'Dashboard';
+    }
 };
 
-// --- 2. SCHEDULE COMPONENT ---
+/* --- SCHEDULE COMPONENT --- */
 const ScheduleSection = ({ schedule: initialSchedule }) => {
-    const [schedule, setSchedule] = useState(initialSchedule);
+    const [schedule, setSchedule] = useState(initialSchedule || []);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleTimeChange = (index, field, value) => {
         const newSchedule = [...schedule];
@@ -114,71 +155,78 @@ const ScheduleSection = ({ schedule: initialSchedule }) => {
     };
 
     const saveSchedule = async () => {
-         const token = localStorage.getItem('token');
-         await fetch('http://127.0.0.1:8000/api/auth/dashboard/schedule/', {
-             method: 'POST',
-             headers: { 
-                 'Content-Type': 'application/json',
-                 'Authorization': `Bearer ${token}`
-             },
-             body: JSON.stringify(schedule)
-         });
-         alert("Schedule Updated!");
+         setIsSaving(true);
+         const token = localStorage.getItem('access') || localStorage.getItem('token');
+         try {
+             const res = await fetch(`${API_BASE_URL}/api/auth/dashboard/schedule/`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                 body: JSON.stringify(schedule)
+             });
+             if(res.ok) alert("✅ Schedule Saved!");
+             else alert("❌ Error saving schedule");
+         } catch (e) { alert("Connection Error"); } 
+         finally { setIsSaving(false); }
     };
 
     return (
-        <div className="bg-white p-6 rounded shadow">
-            <div className="flex justify-between mb-6">
-                <h3 className="text-xl font-bold">Weekly Schedule</h3>
-                <button onClick={saveSchedule} className="bg-green-600 text-white px-4 py-2 rounded">Save Changes</button>
+        <div className="schedule-card">
+            <div className="card-header">
+                <div>
+                    <h3 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>Working Hours</h3>
+                    <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '4px 0 0' }}>Set your weekly availability.</p>
+                </div>
+                <button 
+                    onClick={saveSchedule} 
+                    disabled={isSaving}
+                    className="save-btn-primary"
+                >
+                    <Save size={18} />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                </button>
             </div>
 
-            {schedule.map((day, index) => (
-                <div key={day.id} className={`flex items-center space-x-4 mb-4 p-3 rounded border ${!day.is_active ? 'bg-gray-100 opacity-60' : ''}`}>
-                    <div className="w-24 font-semibold">
-                        <input type="checkbox" checked={day.is_active} onChange={() => toggleActive(index)} className="mr-2"/>
-                        {day.day_name}
+            <div className="days-list">
+                {schedule.map((day, index) => (
+                    <div key={index} className={`day-row ${day.is_active ? 'active' : ''}`}>
+                        
+                        <div className="day-toggle">
+                            <input 
+                                type="checkbox" 
+                                checked={day.is_active} 
+                                onChange={() => toggleActive(index)} 
+                                className="toggle-checkbox"
+                            />
+                            <span className="day-label">{day.day_name}</span>
+                        </div>
+                        
+                        {day.is_active ? (
+                            <div className="time-inputs">
+                                <TimeInput label="Start" value={day.start_time} onChange={(v) => handleTimeChange(index, 'start_time', v)} />
+                                <TimeInput label="End" value={day.end_time} onChange={(v) => handleTimeChange(index, 'end_time', v)} />
+                                {/* Optional divider */}
+                                <TimeInput label="Lunch In" value={day.break_start} onChange={(v) => handleTimeChange(index, 'break_start', v)} />
+                                <TimeInput label="Lunch Out" value={day.break_end} onChange={(v) => handleTimeChange(index, 'break_end', v)} />
+                            </div>
+                        ) : (
+                            <span className="unavailable-text">Currently Unavailable</span>
+                        )}
                     </div>
-                    
-                    {day.is_active && (
-                        <>
-                            <div>
-                                <label className="text-xs text-gray-500 block">Start</label>
-                                <input type="time" value={day.start_time.slice(0,5)} onChange={(e) => handleTimeChange(index, 'start_time', e.target.value)} className="border rounded p-1"/>
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500 block">End</label>
-                                <input type="time" value={day.end_time.slice(0,5)} onChange={(e) => handleTimeChange(index, 'end_time', e.target.value)} className="border rounded p-1"/>
-                            </div>
-                            
-                            <div className="pl-4 border-l">
-                                <label className="text-xs text-red-400 block">Lunch Start</label>
-                                <input type="time" value={day.break_start.slice(0,5)} onChange={(e) => handleTimeChange(index, 'break_start', e.target.value)} className="border rounded p-1"/>
-                            </div>
-                            <div>
-                                <label className="text-xs text-red-400 block">Lunch End</label>
-                                <input type="time" value={day.break_end.slice(0,5)} onChange={(e) => handleTimeChange(index, 'break_end', e.target.value)} className="border rounded p-1"/>
-                            </div>
-                        </>
-                    )}
-                    {!day.is_active && <span className="text-gray-500 italic">Day Off</span>}
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
     );
 };
 
-// --- 3. REVENUE COMPONENT ---
-const RevenueSection = ({ revenue }) => (
-    <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded shadow border-l-4 border-green-500">
-            <h3 className="text-gray-500 text-sm">Total Revenue</h3>
-            <p className="text-3xl font-bold text-gray-800">${revenue}</p>
-        </div>
-        <div className="bg-white p-6 rounded shadow border-l-4 border-blue-500">
-            <h3 className="text-gray-500 text-sm">Completed Appointments</h3>
-            <p className="text-3xl font-bold text-gray-800">0</p>
-        </div>
+const TimeInput = ({ label, value, onChange }) => (
+    <div className="input-group">
+        <label className="input-label">{label}</label>
+        <input 
+            type="time" 
+            value={value ? value.slice(0,5) : ""} 
+            onChange={(e) => onChange(e.target.value)} 
+            className="time-field"
+        />
     </div>
 );
 
